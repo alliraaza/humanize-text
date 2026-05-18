@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/molly554/ai-humanize-zh">中文版 →</a>
+  <a href="https://github.com/lynote-ai/humanize-text-zh">中文版 →</a>
 </p>
 
 ---
