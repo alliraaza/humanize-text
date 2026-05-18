@@ -1,0 +1,54 @@
+[general]
+# Default humanization method: translation_chain, llm_rewrite, detection_guided, mixed_engine
+default_method = "translation_chain"
+# Target language
+language = "en"
+# Log level: debug, info, warning, error
+log_level = "info"
+
+[api_keys]
+deepseek_api_key = ""
+google_translate_api_key = ""
+niutrans_api_key = ""
+
+[translation_chain]
+# Language chain for translation (distant languages produce more thorough restructuring)
+chain = ["zh", "ja", "fi"]
+# Processing tier: standard, advanced, focus
+tier = "standard"
+# Engines to use: google, niutrans, mymemory, apertium
+engines = ["google", "mymemory"]
+
+[llm_rewrite]
+# LLM model to use
+model = "deepseek-chat"
+# Temperature (1.1-1.3 recommended for humanization)
+temperature = 1.2
+# Top-p sampling
+top_p = 0.9
+# Number of rewriting rounds (2-3 recommended)
+rounds = 2
+
+[detection_guided]
+# Maximum feedback loop rounds
+max_feedback_rounds = 2
+# Enable GPU for detection models
+enable_gpu = true
+# Detection threshold (0-1, lower = stricter)
+threshold = 0.5
+# Enable post-processing rules
+enable_postprocess = true
+
+[mixed_engine]
+# Engines to mix
+engines = ["google", "niutrans", "mymemory"]
+# Selection strategy: best_score, random_weighted, round_robin
+strategy = "best_score"
+
+[postprocess]
+# Enable AI vocabulary replacement
+replace_ai_vocab = true
+# Enable sentence rhythm disruption
+disrupt_rhythm = true
+# Merge consecutive short sentences (threshold in words)
+short_sentence_threshold = 8
