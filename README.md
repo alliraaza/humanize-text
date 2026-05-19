@@ -1,19 +1,7 @@
-<p align="center">
-  <img src="presentation/logo.svg" alt="AI-Humanizer logo" width="96"/>
-</p>
-
 <h1 align="center">AI-Humanizer</h1>
 
 <p align="center">
-  <strong>Turn AI drafts into writing with a human pulse.</strong>
-</p>
-
-<p align="center">
-  <em>4 proven humanization methods, one open-source playground, and a faster path from machine-polished to reader-loved.</em>
-</p>
-
-<p align="center">
-  <img src="presentation/banner.png" alt="AI-Humanizer banner" width="720"/>
+  <img src="presentation/ai-humanizer-banner.png" alt="AI-Humanizer turns AI drafts into human-like writing" width="900"/>
 </p>
 
 <p align="center">
