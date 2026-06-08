@@ -26,11 +26,13 @@ An AI text humanization toolkit. This repo evolved through two stages:
 
 ### v1.5.1 — Standard Pipeline (Recommended)
 
-The Standard Pipeline preserves the original writing style while routing text through a 4-step chain: two DeepSeek humanization rewrites followed by two cross-engine translation hops.
+The Standard Pipeline preserves the original writing style while routing text through a 4-step chain: two LLM humanization rewrites (DeepSeek or [OpenRouter](https://openrouter.ai) via OpenAI-compatible API) followed by two cross-engine translation hops.
 
 ```
-Input (EN) → Chinese (DeepSeek) → Japanese (DeepSeek) → Finnish (Google) → English (Niutrans)
+Input (EN) → Chinese (LLM) → Japanese (LLM) → Finnish (Google) → English (Niutrans)
 ```
+
+LLM steps use **DeepSeek** (default) or **[OpenRouter](https://openrouter.ai)** — any OpenAI-compatible chat API. Configure via `[llm]` in `config.toml`. See [Configuration Guide](docs/configuration.md).
 
 **See [`examples/showcase/`](examples/showcase/) for 5 real samples with full intermediate-step outputs and AI-detection verdicts.**
 
@@ -55,14 +57,14 @@ Input (EN) → Chinese (DeepSeek) → Japanese (DeepSeek) → Finnish (Google) �
 
 | Step | Engine | From → To | Purpose |
 |------|--------|-----------|---------|
-| 1 | DeepSeek (temp 1.3) | Input → Chinese (Chinese Rewriting) | LLM humanization rewrite + language shift |
-| 2 | DeepSeek (temp 1.3) | Chinese → Japanese (Japanese Rewriting) | Second LLM humanization, carries Step 1 as history |
+| 1 | LLM (temp 1.3) | Input → Chinese (Chinese Rewriting) | LLM humanization rewrite + language shift |
+| 2 | LLM (temp 1.3) | Chinese → Japanese (Japanese Rewriting) | Second LLM humanization, carries Step 1 as history |
 | 3 | Google Translate | Japanese → Finnish (First Round of Translation) | First translation hop — distant language structural disruption |
 | 4 | Niutrans | Finnish → English (Second-Round Translation) | Second translation hop — cross-engine reconstruction |
 
 ### Why This Chain Works
 
-1. **Steps 1–2 (LLM Rewrite):** DeepSeek at temperature 1.3 rewrites while translating, breaking AI statistical fingerprints with creative variation. Step 2 carries Step 1 as conversation history for coherent humanization.
+1. **Steps 1–2 (LLM Rewrite):** Configurable LLM provider (DeepSeek default, OpenRouter optional) at temperature 1.3 rewrites while translating, breaking AI statistical fingerprints with creative variation. Step 2 carries Step 1 as conversation history for coherent humanization.
 2. **Steps 3–4 (Multi-Engine Translation):** Two different NMT engines (Google → Niutrans) introduce compounding structural changes. No single-engine fingerprint survives.
 3. **Distant Languages:** Chinese → Japanese → Finnish maximizes linguistic distance at each hop, ensuring thorough restructuring before reconstruction to English.
 
@@ -112,14 +114,39 @@ git clone https://github.com/lynote-ai/humanize-text.git
 cd humanize-text
 pip install -r requirements.txt
 cp config/config.example.toml config/config.toml
-# Fill in your API keys in config.toml
+# Fill in your API keys in config.toml (see examples below)
 python -m src.standard.pipeline --input "Your AI-generated text here"
 ```
+
+**DeepSeek (default):**
+
+```toml
+[api_keys]
+deepseek_api_key = "sk-..."
+niutrans_api_key = "your-key"
+
+[llm]
+provider = "deepseek"
+```
+
+**OpenRouter:**
+
+```toml
+[api_keys]
+openrouter_api_key = "sk-or-..."
+niutrans_api_key = "your-key"
+
+[llm]
+provider = "openrouter"
+model = "deepseek/deepseek-chat"   # any OpenRouter model slug
+```
+
+Override the API endpoint with `base_url` in `[llm]`, or via `LLM_BASE_URL` / `LLM_API_KEY` environment variables. Full reference: [docs/configuration.md](docs/configuration.md).
 
 ### n8n Workflow
 
 1. Import `n8n/humanize_standard.json` into your n8n instance
-2. Configure DeepSeek API key in the HTTP Request nodes
+2. Configure the LLM API key and URL in the HTTP Request nodes (defaults to DeepSeek; point at OpenRouter's `https://openrouter.ai/api/v1/chat/completions` to use OpenRouter)
 3. Run — input text goes in, humanized text comes out
 
 ---
@@ -185,7 +212,8 @@ Tested on 50 text pairs with expert evaluation:
 src/
 ├── standard/                # ★ v1.5.1 production Standard Pipeline (recommended)
 │   ├── pipeline.py          # 4-step chain, CLI entry
-│   ├── llm_rewriter.py      # DeepSeek humanization rewrite
+│   ├── llm_client.py        # OpenAI-compatible client (DeepSeek / OpenRouter)
+│   ├── llm_rewriter.py      # LLM humanization rewrite
 │   └── translators.py       # Google + Niutrans engines
 │
 └── methodologies/           # v1.0 four-methodology reference implementations

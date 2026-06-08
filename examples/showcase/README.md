@@ -22,9 +22,9 @@ detector's probability that the text is human-written.
 ```
 Input (EN)
     │
-    ▼  Step 1: DeepSeek (temp 1.3)  ──  中文改写
+    ▼  Step 1: LLM (temp 1.3)       ──  中文改写
     │
-    ▼  Step 2: DeepSeek (temp 1.3)  ──  日语改写  (carries history)
+    ▼  Step 2: LLM (temp 1.3)       ──  日语改写  (carries history)
     │
     ▼  Step 3: Google Translate     ──  一轮翻译 (JA → FI)
     │
@@ -39,8 +39,8 @@ Final Output (EN, humanized)
 Each `example_NN.md` file shows:
 
 1. **Original Input** — the raw AI-generated English text
-2. **Step 1 output** — Chinese humanization rewrite (DeepSeek)
-3. **Step 2 output** — Japanese humanization rewrite (DeepSeek, history-aware)
+2. **Step 1 output** — Chinese humanization rewrite (LLM)
+3. **Step 2 output** — Japanese humanization rewrite (LLM, history-aware)
 4. **Step 3 output** — Finnish translation (Google)
 5. **Step 4 output** — final English text (Niutrans)
 6. **Detection verdict** — class + confidence
@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 # Configure API keys
 cp config/config.example.toml config/config.toml
-# Fill in deepseek_api_key and niutrans_api_key
+# Fill in LLM + niutrans API keys (DeepSeek or OpenRouter — see docs/configuration.md)
 
 # Run on any sample's original text
 python -m src.standard.pipeline \
@@ -62,8 +62,9 @@ python -m src.standard.pipeline \
   --verbose
 ```
 
-The pipeline is non-deterministic at Steps 1–2 (DeepSeek temperature 1.3),
-so your output will differ in wording while preserving meaning.
+The examples below were generated with **DeepSeek** (`deepseek-chat`). The pipeline now also supports **OpenRouter** and other OpenAI-compatible providers via `[llm]` in `config.toml`.
+
+Steps 1–2 are non-deterministic (temperature 1.3), so your output will differ in wording while preserving meaning.
 
 ---
 

@@ -16,12 +16,21 @@
 
 After importing, you need to set API keys in two places:
 
-**DeepSeek (Steps 1-2):**
+**LLM provider (Steps 1-2):**
+
+The workflow ships with DeepSeek URLs by default. To use **OpenRouter** instead, change the HTTP Request URL on both Step 1 and Step 2 nodes to `https://openrouter.ai/api/v1/chat/completions` and update the `model` field in the JSON body to an OpenRouter slug (e.g. `deepseek/deepseek-chat`).
+
+**DeepSeek (default):**
 - Click on "Step 1: Chinese Rewrite (DeepSeek)" node
 - Go to **Authentication** → **Header Auth**
 - Set header name: `Authorization`
 - Set header value: `Bearer YOUR_DEEPSEEK_KEY`
 - Repeat for "Step 2: Japanese Rewrite (DeepSeek)"
+
+**OpenRouter:**
+- Same nodes — set URL to `https://openrouter.ai/api/v1/chat/completions`
+- Set header value: `Bearer YOUR_OPENROUTER_KEY`
+- Update `model` in the request body to your chosen OpenRouter model slug
 
 **Niutrans (Steps 4-5):**
 - Click on "Step 4: German → Spanish (Niutrans)" node

@@ -53,7 +53,31 @@ print(result["result"])               # final humanized text
 print(result["processing_time_ms"])    # total elapsed time
 for step in result["steps"]:
     print(step["step"], step["engine"], step["direction"], step["length"])
+    # step["engine"] is "DeepSeek" or "OpenRouter" depending on [llm].provider
 ```
+
+### LLM provider configuration
+
+Steps 1–2 use an OpenAI-compatible chat API configured in `config.toml` under `[llm]`:
+
+```toml
+[llm]
+provider = "deepseek"     # or "openrouter"
+base_url = ""             # empty = provider default; override for custom endpoints
+model = ""                # empty = provider default model
+temperature = 1.3
+```
+
+Resolve settings programmatically:
+
+```python
+from src.standard.llm_client import resolve_llm_config
+
+llm = resolve_llm_config(config)
+# llm["provider"], llm["base_url"], llm["model"], llm["api_key"], llm["display_name"]
+```
+
+See [configuration.md](configuration.md) for API keys, OpenRouter model slugs, and env overrides (`LLM_PROVIDER`, `LLM_BASE_URL`, `OPENROUTER_API_KEY`, etc.).
 
 ---
 

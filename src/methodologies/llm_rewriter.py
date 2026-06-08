@@ -2,11 +2,11 @@
 
 Reference implementation of iterative LLM rewriting with rhythm/vocabulary
 prompts. For production use, the v1.5.1 Standard Pipeline integrates a
-simpler, history-aware DeepSeek rewrite at translation boundaries — see
+simpler, history-aware LLM rewrite at translation boundaries — see
 `src.standard.llm_rewriter`.
 """
 
-import httpx
+from src.standard.llm_client import chat_completions, resolve_llm_config
 
 
 class LLMRewriteProcessor:
@@ -28,29 +28,29 @@ class LLMRewriteProcessor:
 
     def __init__(self, config: dict):
         self.config = config.get("llm_rewrite", {})
-        self.api_key = config.get("api_keys", {}).get("deepseek_api_key", "")
-        self.model = self.config.get("model", "deepseek-chat")
-        self.temperature = self.config.get("temperature", 1.2)
+        llm = resolve_llm_config(config)
+        self.api_key = llm["api_key"]
+        self.base_url = llm["base_url"]
+        self.model = llm["model"]
+        self.temperature = llm["temperature"]
+        self.extra_headers = llm["extra_headers"]
         self.top_p = self.config.get("top_p", 0.9)
         self.rounds = self.config.get("rounds", 2)
 
     def _call_llm(self, system_prompt: str, text: str) -> str:
-        response = httpx.post(
-            "https://api.deepseek.com/chat/completions",
-            headers={"Authorization": f"Bearer {self.api_key}"},
-            json={
-                "model": self.model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": text},
-                ],
-                "temperature": self.temperature,
-                "top_p": self.top_p,
-            },
+        return chat_completions(
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": text},
+            ],
+            api_key=self.api_key,
+            base_url=self.base_url,
+            model=self.model,
+            temperature=self.temperature,
+            top_p=self.top_p,
             timeout=60,
+            extra_headers=self.extra_headers,
         )
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
 
     def process(self, text: str, **kwargs) -> str:
         rounds = kwargs.get("rounds", self.rounds)

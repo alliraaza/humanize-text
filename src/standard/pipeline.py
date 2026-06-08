@@ -16,8 +16,9 @@ import time
 import click
 import toml
 
+from .llm_client import resolve_llm_config
 from .translators import google_translate, niutrans_translate
-from .llm_rewriter import deepseek_rewrite
+from .llm_rewriter import llm_rewrite
 
 
 def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> dict:
@@ -34,35 +35,44 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
             - 'steps': list of {step, engine, direction, output, length}
             - 'processing_time_ms': total elapsed time in milliseconds
     """
-    ds_key = config["api_keys"]["deepseek_api_key"]
+    llm = resolve_llm_config(config)
     niutrans_key = config["api_keys"]["niutrans_api_key"]
     intermediate_lang = config.get("pipeline", {}).get("intermediate_lang", "fi")
+    engine_name = llm["display_name"]
 
     steps = []
     start = time.time()
 
-    # Step 1: DeepSeek — Input (EN) → Chinese humanization rewrite
-    step1 = deepseek_rewrite(
+    # Step 1: LLM — Input (EN) → Chinese humanization rewrite
+    step1 = llm_rewrite(
         text=text,
         target_language="中文",
-        api_key=ds_key,
+        api_key=llm["api_key"],
+        base_url=llm["base_url"],
+        model=llm["model"],
         history=None,
+        temperature=llm["temperature"],
+        extra_headers=llm["extra_headers"],
     )
     steps.append({
-        "step": 1, "engine": "DeepSeek",
+        "step": 1, "engine": engine_name,
         "direction": "Input → Chinese (中文改写)",
         "output": step1, "length": len(step1),
     })
 
-    # Step 2: DeepSeek — Chinese → Japanese (carries step 1 as history)
-    step2 = deepseek_rewrite(
+    # Step 2: LLM — Chinese → Japanese (carries step 1 as history)
+    step2 = llm_rewrite(
         text=step1,
         target_language="日语",
-        api_key=ds_key,
+        api_key=llm["api_key"],
+        base_url=llm["base_url"],
+        model=llm["model"],
         history={"input": text, "output": step1},
+        temperature=llm["temperature"],
+        extra_headers=llm["extra_headers"],
     )
     steps.append({
-        "step": 2, "engine": "DeepSeek",
+        "step": 2, "engine": engine_name,
         "direction": "Chinese → Japanese (日语改写)",
         "output": step2, "length": len(step2),
     })

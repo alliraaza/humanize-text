@@ -5,7 +5,7 @@
 | Doc | Description | Audience |
 |-----|-------------|----------|
 | [pipeline.md](pipeline.md) | **Standard Pipeline (v1.5.1)** — 4-step architecture, why each step works, parameters, validation results | Developers using the production pipeline |
-| [configuration.md](configuration.md) | Config file reference (`config.toml`) | Everyone |
+| [configuration.md](configuration.md) | Config file reference — LLM providers (DeepSeek / OpenRouter), API keys, env overrides | Everyone |
 | [installation.md](installation.md) | Setup: pip, Docker, Colab, GPU | Everyone |
 
 ## Reference

@@ -6,10 +6,29 @@
 
 ### What API keys do I need?
 
-- **DeepSeek** (free tier available) — for LLM humanization rewriting
-- **Niutrans** (free tier available) — for translation steps
+- **LLM provider** (Steps 1–2) — choose one:
+  - **DeepSeek** (default, free tier available) — set `api_keys.deepseek_api_key`
+  - **OpenRouter** (optional) — set `api_keys.openrouter_api_key` and `[llm].provider = "openrouter"`
+- **Niutrans** (free tier available) — for translation Step 4
 
 Google Translate (Step 3) uses the free public API and doesn't require a key.
+
+See [configuration.md](configuration.md) for provider setup, model slugs, and environment variable overrides.
+
+### Can I use OpenRouter instead of DeepSeek?
+
+Yes. OpenRouter exposes many models through a single OpenAI-compatible API. In `config.toml`:
+
+```toml
+[api_keys]
+openrouter_api_key = "sk-or-..."
+
+[llm]
+provider = "openrouter"
+model = "deepseek/deepseek-chat"
+```
+
+You can also override the endpoint with `[llm].base_url` or the `LLM_BASE_URL` environment variable.
 
 ### How long does processing take?
 

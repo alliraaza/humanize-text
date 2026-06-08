@@ -9,32 +9,34 @@
 ```
 Input Text (EN)
     ↓
-Step 1: DeepSeek (temp 1.3)              ── 中文改写
+Step 1: LLM (temp 1.3)                    ── 中文改写
     Input → Chinese + Humanization Rewrite
     ↓
-Step 2: DeepSeek (temp 1.3, with history) ── 日语改写
+Step 2: LLM (temp 1.3, with history)       ── 日语改写
     Chinese → Japanese + Humanization Rewrite
     ↓
-Step 3: Google Translate                  ── 一轮翻译
+Step 3: Google Translate                    ── 一轮翻译
     Japanese → Finnish
     ↓
-Step 4: Niutrans                          ── 二轮翻译
+Step 4: Niutrans                            ── 二轮翻译
     Finnish → Target Language (EN)
     ↓
 Output (Humanized EN)
 ```
 
+Steps 1–2 call any **OpenAI-compatible** chat API. The default provider is DeepSeek; set `[llm].provider = "openrouter"` to route through [OpenRouter](https://openrouter.ai). See [configuration.md](configuration.md).
+
 ## Why Each Step Matters
 
 ### Steps 1-2: LLM Humanization Rewrite
 
-These steps do the heavy lifting. DeepSeek at temperature 1.3 doesn't just translate — it rewrites. The key differences from plain translation:
+These steps do the heavy lifting. The configured LLM at temperature 1.3 doesn't just translate — it rewrites. The key differences from plain translation:
 
 - **Sentence restructuring:** AI-typical uniform sentence patterns get broken
 - **Vocabulary diversification:** Formal/robotic word choices get replaced with natural alternatives
 - **Rhythm variation:** The output has varied sentence lengths (burstiness)
 
-Step 2 carries the conversation history from Step 1. This gives DeepSeek context about what was already changed, preventing it from reverting patterns that Step 1 disrupted.
+Step 2 carries the conversation history from Step 1. This gives the LLM context about what was already changed, preventing it from reverting patterns that Step 1 disrupted.
 
 ### Steps 3-4: Cross-Engine Translation Chain
 
@@ -62,8 +64,10 @@ Finnish was selected for the intermediate step because of its agglutinative morp
 
 | Parameter | Value | Why |
 |-----------|-------|-----|
+| LLM provider | `deepseek` (default) or `openrouter` | Set via `[llm].provider` in `config.toml`. Both use OpenAI-compatible `/chat/completions`. |
 | Temperature | 1.3 | Higher than default (1.0) to increase creative variation. Too high (>1.5) causes incoherence. |
-| Model | deepseek-chat | Good balance of quality, speed, and cost for rewriting tasks. |
+| Model | Provider default or `[llm].model` | `deepseek-chat` (DeepSeek) or `deepseek/deepseek-chat` (OpenRouter). Any compatible model slug works. |
+| Base URL | Provider default or `[llm].base_url` | Override to point at a custom OpenAI-compatible proxy. |
 | History | 1 round | Step 2 sees Step 1's context. More rounds didn't improve quality in testing. |
 | Intermediate language | `fi` (Finnish) | Configurable via `[pipeline].intermediate_lang` in `config.toml`. |
 

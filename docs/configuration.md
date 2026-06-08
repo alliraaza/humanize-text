@@ -10,13 +10,50 @@ Edit `config/config.toml` with your API keys.
 
 ## Required API Keys
 
-### DeepSeek API Key
+### LLM Provider (Steps 1-2)
 
-Used for Steps 1-2 (LLM humanization rewrite).
+The pipeline uses an OpenAI-compatible chat API. Choose a provider in `[llm]`:
+
+#### DeepSeek (default)
 
 1. Go to [platform.deepseek.com](https://platform.deepseek.com)
 2. Create an account and generate an API key
 3. Add to config: `deepseek_api_key = "sk-..."`
+
+#### OpenRouter (optional)
+
+OpenRouter exposes many models via a single OpenAI-compatible endpoint.
+
+1. Go to [openrouter.ai](https://openrouter.ai)
+2. Create an account and generate an API key
+3. Configure:
+
+```toml
+[api_keys]
+openrouter_api_key = "sk-or-..."
+
+[llm]
+provider = "openrouter"
+model = "deepseek/deepseek-chat"   # or anthropic/claude-3.5-sonnet, etc.
+```
+
+#### Provider defaults
+
+| Provider | Default `base_url` | Default `model` | Config key |
+|----------|-------------------|-----------------|------------|
+| `deepseek` | `https://api.deepseek.com` | `deepseek-chat` | `api_keys.deepseek_api_key` |
+| `openrouter` | `https://openrouter.ai/api/v1` | `deepseek/deepseek-chat` | `api_keys.openrouter_api_key` |
+
+Set `base_url` in `[llm]` to override the provider preset (e.g. a self-hosted OpenAI-compatible proxy). Leave empty to use the default for the selected provider.
+
+**Custom endpoint example:**
+
+```toml
+[llm]
+provider = "openrouter"
+base_url = "https://my-proxy.example.com/v1"
+model = "deepseek/deepseek-chat"
+```
 
 ### Niutrans API Key
 
@@ -34,13 +71,44 @@ target_language = "en"    # Final output language
 log_level = "info"        # debug, info, warning, error
 
 [api_keys]
-deepseek_api_key = ""     # Required
+deepseek_api_key = ""     # Required when llm.provider = "deepseek"
+openrouter_api_key = ""   # Required when llm.provider = "openrouter"
 niutrans_api_key = ""     # Required
 
-[pipeline]
-model = "deepseek-chat"   # DeepSeek model
+[llm]
+provider = "deepseek"     # "deepseek" | "openrouter"
+base_url = ""             # empty = provider default; set to override
+model = ""                # empty = provider default model
 temperature = 1.3         # 1.1-1.5 range (1.3 recommended)
-chain = ["zh", "ja", "de", "es"]  # Language chain
+http_referer = ""         # OpenRouter optional attribution
+app_title = ""            # OpenRouter optional attribution
+
+[pipeline]
+model = "deepseek-chat"   # Fallback if [llm].model is empty
+temperature = 1.3
+intermediate_lang = "fi"
+```
+
+## Environment Variable Overrides
+
+Optional runtime overrides (take precedence over TOML):
+
+| Variable | Purpose |
+|----------|---------|
+| `LLM_PROVIDER` | `deepseek` or `openrouter` |
+| `LLM_BASE_URL` | Override API base URL |
+| `LLM_API_KEY` | Generic API key override |
+| `OPENROUTER_API_KEY` | OpenRouter key when provider is `openrouter` |
+| `DEEPSEEK_API_KEY` | DeepSeek key when provider is `deepseek` |
+| `LLM_MODEL` | Override model slug |
+
+**Example — switch to OpenRouter via environment (no TOML edit):**
+
+```bash
+export LLM_PROVIDER=openrouter
+export OPENROUTER_API_KEY=sk-or-...
+export LLM_MODEL=deepseek/deepseek-chat
+python -m src.standard.pipeline --input "Your text here"
 ```
 
 ## Supported Target Languages
