@@ -3,7 +3,13 @@
 import httpx
 from deep_translator import GoogleTranslator
 
+from openai import OpenAI
 
+client = OpenAI(
+    base_url="http://localhost:11434/v1",
+    api_key="ollama",
+    timeout=600.0   # 10 minutes
+)
 def google_translate(text: str, source: str, target: str) -> str:
     """Translate text using Google Translate.
 
@@ -37,6 +43,25 @@ def niutrans_translate(text: str, source: str, target: str, api_key: str) -> str
     Returns:
         Translated text.
     """
+
+    prompt = f"""
+Translate the following text from {source} to {target}.
+Return only the translated text.
+
+{text}
+"""
+
+    #prompt="Translate the following text from {source} to {target}.Return only the translated text."
+    response = client.chat.completions.create(
+        model="qwen2.5:7b",
+        temperature=0.2,
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    return response.choices[0].message.content.strip()
+    """"
     response = httpx.post(
         "https://api.niutrans.com/NiuTransServer/translation",
         json={
@@ -56,7 +81,7 @@ def niutrans_translate(text: str, source: str, target: str, api_key: str) -> str
         raise RuntimeError(f"Niutrans error: {data['error_msg']}")
     else:
         raise RuntimeError(f"Unexpected Niutrans response: {data}")
-
+"""
 
 def _split_text(text: str, max_len: int = 4500) -> list[str]:
     """Split text into chunks at sentence boundaries."""

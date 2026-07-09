@@ -49,7 +49,7 @@ class LLMRewriteProcessor:
             model=self.model,
             temperature=self.temperature,
             top_p=self.top_p,
-            timeout=60,
+            timeout=600,
             extra_headers=self.extra_headers,
             provider=self.provider,
         )

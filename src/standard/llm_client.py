@@ -108,7 +108,7 @@ def chat_completions(
     model: str,
     temperature: float = 1.3,
     top_p: float | None = None,
-    timeout: int = 120,
+    timeout: int = 600,
     extra_headers: dict | None = None,
     provider: str | None = None,
 ) -> str:
@@ -151,7 +151,7 @@ def _litellm_chat_completions(
     model: str,
     temperature: float = 1.3,
     top_p: float | None = None,
-    timeout: int = 120,
+    timeout: int = 600,
 ) -> str:
     """Route through LiteLLM SDK for 100+ provider support."""
     import litellm
