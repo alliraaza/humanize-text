@@ -16,11 +16,11 @@ Quick start:
 
 from .pipeline import run_standard_pipeline
 from .llm_rewriter import deepseek_rewrite
-from .translators import google_translate, niutrans_translate
+from .translators import google_translate, llm_translate
 
 __all__ = [
     "run_standard_pipeline",
     "deepseek_rewrite",
     "google_translate",
-    "niutrans_translate",
+    "llm_translate",
 ]

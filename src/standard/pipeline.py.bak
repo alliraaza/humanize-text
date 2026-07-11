@@ -55,8 +55,8 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
         temperature=llm["temperature"],
         extra_headers=llm["extra_headers"],
         provider=llm["provider"],
-        # top_p=llm["top_p"],
-        # timeout=llm["timeout"],
+        top_p=llm["top_p"],
+        timeout=llm["timeout"],
     )
     steps.append({
         "step": 1, "engine": engine_name,
@@ -75,8 +75,8 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
         temperature=llm["temperature"],
         extra_headers=llm["extra_headers"],
         provider=llm["provider"],
-        # top_p=llm["top_p"],
-        # timeout=translator_cfg["timeout"],
+        top_p=llm["top_p"],
+        timeout=translator_cfg["timeout"],
     )
     steps.append({
         "step": 2, "engine": engine_name,
@@ -103,7 +103,6 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
         timeout=translator_cfg["timeout"],
         top_p=translator_cfg["top_p"],
         top_k=translator_cfg["top_k"],
-        max_tokens=translator_cfg["max_tokens"],
         )
     steps.append({
         "step": 4, "engine": "LLM Translate:"+translator_cfg["model"],

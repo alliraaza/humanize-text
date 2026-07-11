@@ -20,12 +20,27 @@ provider = "deepseek"
 # Override API base URL (empty = provider default)
 base_url = "http://localhost:11434/v1"
 # Model slug (empty = provider default)
-model = "qwen2.5:7b"
+#model = "qwen2.5:7b"
+model = "qwen2.5-16k:default"
 # Temperature for LLM rewriting (1.3 recommended)
 temperature = 1.3
 # OpenRouter optional site attribution (for openrouter.ai rankings)
 http_referer = ""
 app_title = ""
+timeout=600
+top_p = 0.92
+#top_k = 40
+
+[translator]
+base_url = "http://localhost:11434/v1"
+#model = "qwen2.5:7b"
+model = "qwen2.5-16k:default"
+# Temperature for translation should be lower
+temperature = 0.5       # Best balance for translation
+top_p = 0.92
+top_k = 40
+timeout=600
+max_tokens=8192
 
 [pipeline]
 # model / temperature kept for backward compat; [llm] takes precedence
