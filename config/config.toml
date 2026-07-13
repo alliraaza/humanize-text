@@ -42,6 +42,9 @@ top_k = 40
 timeout=600
 max_tokens=8192
 
+#step 3 treanslation from JA-FI using libre
+libre_url="http://localhost:5000/translate"
+
 [pipeline]
 # model / temperature kept for backward compat; [llm] takes precedence
 model = "deepseek-chat"

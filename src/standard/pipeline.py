@@ -2,10 +2,10 @@
 Standard Pipeline v1.5.1 — Multi-language translation chain with LLM humanization.
 
 Pipeline (4 steps):
-  Step 1: Input (EN) → Chinese — DeepSeek humanization rewrite
-  Step 2: Chinese → Japanese — DeepSeek humanization rewrite (with history)
-  Step 3: Japanese → Finnish — Google Translate (first translation hop)
-  Step 4: Finnish → Target (EN) — Niutrans (second translation hop)
+  Step 1: Input (EN) → Chinese — LLM humanization rewrite
+  Step 2: Chinese → Japanese — LLM humanization rewrite (with history)
+  Step 3: Japanese → Finnish — Translate (first translation hop)
+  Step 4: Finnish → Target (EN) — Translate (second translation hop)
 
 This chain was selected after empirical testing against AI detectors on
 50+ sample texts. See `examples/showcase/` for input/output traces of all
@@ -17,7 +17,7 @@ import click
 import toml
 
 from .llm_client import resolve_llm_config
-from .translators import google_translate, llm_translate
+from .translators import google_translate, llm_translate,libre_translate
 from .llm_rewriter import llm_rewrite
 
 
@@ -84,10 +84,10 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
         "output": step2, "length": len(step2),
     })
 
-    # Step 3: Google Translate — Japanese → intermediate language (first translation hop)
-    step3 = google_translate(step2, source="ja", target=intermediate_lang)
+    # Step 3: Libre Translate — Japanese → intermediate language (first translation hop)
+    step3 = libre_translate(step2, source="ja", target=intermediate_lang, libre_url=translator_cfg["libre_url"])
     steps.append({
-        "step": 3, "engine": "Google",
+        "step": 3, "engine": "Libre Translate",
         "direction": f"Japanese → {intermediate_lang.upper()} (一轮翻译)",
         "output": step3, "length": len(step3),
     })
