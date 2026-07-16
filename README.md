@@ -11,9 +11,6 @@
   <a href="https://lynote.ai"><img src="https://img.shields.io/badge/Try-Lynote.ai-brightgreen?style=for-the-badge" alt="Lynote.ai"></a>
 </p>
 
-<p align="center">
-  English | <a href="README-zh.md">中文</a>
-</p>
 
 ---
 
@@ -24,17 +21,20 @@ An AI text humanization toolkit. This repo evolved through two stages:
 - **v1.0** — Documented **4 humanization methodologies** as reference implementations (translation chain, multi-turn LLM rewriting, detection-guided feedback loop, mixed-engine translation). See [docs/techniques.md](docs/techniques.md).
 - **v1.5 (current)** — Added the **Standard Pipeline**: a production-grade integration of Method 1 (Translation Chain) + Method 2 (LLM Rewriting), fixed as a 5-step chain we actually run and recommend.
 
-### v1.5.1 — Standard Pipeline (Recommended)
+### v1.5.2 — Standard Pipeline (Recommended offline setup)
 
-The Standard Pipeline preserves the original writing style while routing text through a 4-step chain: two LLM humanization rewrites (DeepSeek or [OpenRouter](https://openrouter.ai) via OpenAI-compatible API) followed by two cross-engine translation hops.
-
+The Standard Pipeline preserves the original writing style while routing text through a 4-step chain: two LLM humanization rewrites (Ollama local Qwen modles, OpenAI-compatible API) followed by two cross-engine translation hops.
 ```
-Input (EN) → Chinese (LLM) → Japanese (LLM) → Finnish (Google) → English (Niutrans)
+Input (EN) → Chinese (LLM) → Japanese (LLM) → Finnish (Libre Translate) → English (LLM Translate)
 ```
+Following major changes with this version
 
-LLM steps use **DeepSeek** (default) or **[OpenRouter](https://openrouter.ai)** — any OpenAI-compatible chat API. Configure via `[llm]` in `config.toml`. See [Configuration Guide](docs/configuration.md).
+1. Fully offiline with no inline API usage
+2. Used Libre translate local
+3. Required Libre tranlsate and Ollama models running locally
+4. Recomended to use Qwen 7b and 14b models
 
-**See [`examples/showcase/`](examples/showcase/) for 5 real samples with full intermediate-step outputs and AI-detection verdicts.**
+![img.png](img.png)
 
 **Characteristics:**
 - Best original style preservation among all approaches
@@ -44,105 +44,130 @@ LLM steps use **DeepSeek** (default) or **[OpenRouter](https://openrouter.ai)** 
 
 > The 4 underlying methodologies live in `src/methodologies/` as reference implementations for research and customization. The Standard Pipeline (`src/standard/pipeline.py`) is the recommended production path.
 
-> **Want higher bypass rates + all methods combined?**
-> Lynote.ai fuses Standard + Advanced + Focus pipelines into one intelligent system — auto-selects the optimal approach for each passage.
->
-> **[Try Lynote.ai Free →](https://lynote.ai)**
-
 ---
 
 ## How It Works
 
 ### Step-by-Step Pipeline
 
-| Step | Engine | From → To | Purpose |
-|------|--------|-----------|---------|
-| 1 | LLM (temp 1.3) | Input → Chinese (Chinese Rewriting) | LLM humanization rewrite + language shift |
-| 2 | LLM (temp 1.3) | Chinese → Japanese (Japanese Rewriting) | Second LLM humanization, carries Step 1 as history |
-| 3 | Google Translate | Japanese → Finnish (First Round of Translation) | First translation hop — distant language structural disruption |
-| 4 | Niutrans | Finnish → English (Second-Round Translation) | Second translation hop — cross-engine reconstruction |
+| Step | Engine          | From → To | Purpose |
+|------|-----------------|-----------|---------|
+| 1 | LLM (temp 1.3)  | Input → Chinese (Chinese Rewriting) | LLM humanization rewrite + language shift |
+| 2 | LLM (temp 1.3)  | Chinese → Japanese (Japanese Rewriting) | Second LLM humanization, carries Step 1 as history |
+| 3 | Libre Translate | Japanese → Finnish (First Round of Translation) | First translation hop — distant language structural disruption |
+| 4 | LLM Translate   | Finnish → English (Second-Round Translation) | Second translation hop — cross-engine reconstruction |
 
 ### Why This Chain Works
 
-1. **Steps 1–2 (LLM Rewrite):** Configurable LLM provider (DeepSeek default, OpenRouter optional) at temperature 1.3 rewrites while translating, breaking AI statistical fingerprints with creative variation. Step 2 carries Step 1 as conversation history for coherent humanization.
-2. **Steps 3–4 (Multi-Engine Translation):** Two different NMT engines (Google → Niutrans) introduce compounding structural changes. No single-engine fingerprint survives.
+1. **Steps 1–2 (LLM Rewrite):** Configurable LLM provider (Ollama Qwen default, OpenRouter optional) at temperature 1.3 rewrites while translating, breaking AI statistical fingerprints with creative variation. Step 2 carries Step 1 as conversation history for coherent humanization.
+2. **Steps 3–4 (Multi-Engine Translation):** Two different NMT engines (Libre → LLM) introduce compounding structural changes. No single-engine fingerprint survives.
 3. **Distant Languages:** Chinese → Japanese → Finnish maximizes linguistic distance at each hop, ensuring thorough restructuring before reconstruction to English.
 
 ---
 
-## Lynote.ai — Beyond Standard
-
-<p align="center">
-  <a href="https://lynote.ai">
-    <img src="presentation/lynote_banner.png" alt="Lynote.ai" width="500"/>
-  </a>
-</p>
-
-The Standard pipeline above is **one of three tiers** available. Each has different trade-offs:
-
-| Tier | Style Preservation | Speed | Approach |
-|------|-------------------|-------|----------|
-| **Standard** (this repo) | Best | Fast | Translation chain |
-| **Advanced** | Good | Medium | Translation chain + LLM multi-round rewriting |
-| **Focus** | Moderate | Slower | Translation chain + Detection-guided feedback loop |
-
-**Lynote.ai** combines all three tiers and automatically selects the optimal approach for each text passage:
-
-- **Intelligent Tier Selection** — Analyzes text and picks Standard, Advanced, or Focus per-passage
-- **Adaptive Combination** — Can mix tiers within a single document
-- **10+ Languages** — English, Chinese, Japanese, Korean, Spanish, French, German, and more
-- **Paste & Go** — No setup, no API keys, no configuration
-
-<p align="center">
-  <a href="https://lynote.ai"><img src="https://img.shields.io/badge/Try_Lynote.ai_Free-brightgreen?style=for-the-badge" alt="Try Lynote.ai Free"></a>
-</p>
-
----
 
 ## Quick Start
 
 | Method | Who It's For | How |
 |--------|-------------|-----|
-| Lynote.ai | Everyone — all tiers, zero setup | Visit lynote.ai|
 | n8n Workflow | No-code automation users | Import [`n8n/humanize_standard.json`](n8n/humanize_standard.json) |
 | Python Script | Developers | See below |
 
 ### Python
 
 ```bash
-git clone https://github.com/lynote-ai/humanize-text.git
+git clone https://github.com/alliraaza/humanize-text.git
 cd humanize-text
 pip install -r requirements.txt
-cp config/config.example.toml config/config.toml
+#update config if required
+vi config/config.toml
 # Fill in your API keys in config.toml (see examples below)
-python -m src.standard.pipeline --input "Your AI-generated text here"
+python run.py AI_text_file.txt
 ```
+
+Pre-requisits
+1. Install and configure ollama
+
+    configure the required model
+    
+    ```aiignore
+    # create model file
+    
+    FROM qwen2.5:7b
+    
+    PARAMETER num_ctx 16384
+    
+    ```
+    create and run customized model
+   ```bash
+       ollama create qwen2.5-16k:default -f .\ModelFileQ16
+   ```
+    Ensure model is working 
+
+   ```bash
+   PS C:\ar_git\humanize-text> ollama ps
+   NAME                   ID              SIZE      PROCESSOR    CONTEXT    UNTIL
+   qwen2.5-16k:default    0a89db422b31    5.9 GB    100% CPU     16384      2 minutes from now
+   ```  
+       
+2. Install and configure Libre Translate
+    ```
+   # 1. Clone the repo
+    git clone https://github.com/LibreTranslate/LibreTranslate.git
+    cd LibreTranslate
+
+    # Install dependencies
+    pip install -r requirements.txt
+
+    # If it says no requirements.txt, use this instead:
+    pip install ".[all]"
+
+    # Then run the server. It will download all languages
+    python main.py --port 5000
+
+    #or do specific
+    python main.py --port 5000 --languages "en,ja,fi,zh"   # English, Japanese, Finnish, Chinese
+   ```
+   Ensure it is running local http://localhost:5000/
+![img_1.png](img_1.png)\
+
+3. Test setup
+![img_3.png](img_3.png)
 
 **DeepSeek (default):**
 
 ```toml
-[api_keys]
-deepseek_api_key = "sk-..."
-niutrans_api_key = "your-key"
-
 [llm]
+# LLM provider: "deepseek" | "openrouter"
 provider = "deepseek"
+# Override API base URL (empty = provider default)
+base_url = "http://localhost:11434/v1"
+# Model slug (empty = provider default)
+#model = "qwen2.5:7b"
+model = "qwen2.5-16k:default"
+# Temperature for LLM rewriting (1.3 recommended)
+temperature = 1.3
 ```
 
-**OpenRouter:**
+**Translators:**
 
 ```toml
-[api_keys]
-openrouter_api_key = "sk-or-..."
-niutrans_api_key = "your-key"
+[translator]
+base_url = "http://localhost:11434/v1"
+#model = "qwen2.5:7b"
+model = "qwen2.5-16k:default"
+# Temperature for translation should be lower
+temperature = 0.5       # Best balance for translation
+top_p = 0.92
+top_k = 40
+timeout=600
+max_tokens=8192
 
-[llm]
-provider = "openrouter"
-model = "deepseek/deepseek-chat"   # any OpenRouter model slug
+#step 3 treanslation from JA-FI using libre
+libre_url="http://localhost:5000/translate"
 ```
 
-Override the API endpoint with `base_url` in `[llm]`, or via `LLM_BASE_URL` / `LLM_API_KEY` environment variables. Full reference: [docs/configuration.md](docs/configuration.md).
-
+Override the API endpoint with `base_url` in `[llm]`, if required
 ### n8n Workflow
 
 1. Import `n8n/humanize_standard.json` into your n8n instance
@@ -185,18 +210,6 @@ Tested on 50 text pairs with expert evaluation:
 
 ---
 
-## Comparison with Other Tiers
-
-| | Standard (this repo) | Lynote.ai |
-|---|---|---|
-| Tiers Available | Standard only | Standard + Advanced + Focus |
-| Tier Selection | Manual | Automatic per-passage |
-| Style Preservation | Best | Adaptive — best possible per passage |
-| Setup | Python + API keys | Zero setup |
-| Best For | Style-sensitive content | Any content type |
-
----
-
 ## Documentation
 
 - [Standard Pipeline Technical Details](docs/pipeline.md) — v1.5 production pipeline
@@ -233,18 +246,6 @@ examples/
 ```
 
 ---
-
-## License
-
-MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-## Links
-
-- [Lynote.ai — AI Humanization Platform](https://lynote.ai)
-- [Report a Bug](https://github.com/lynote-ai/humanize-text/issues)
-
 ### Recommended Projects
 
 - [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) — AI short video generator

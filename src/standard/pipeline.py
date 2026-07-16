@@ -19,6 +19,7 @@ import toml
 from .llm_client import resolve_llm_config
 from .translators import google_translate, llm_translate,libre_translate
 from .llm_rewriter import llm_rewrite
+from .llm_translators import translate_with_ollama
 
 
 def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> dict:
@@ -93,7 +94,19 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
     })
 
     # Step 4: llm translate — intermediate language → target (second translation hop)
-    step4 = llm_translate(
+    # step4 = llm_translate(
+    #     step3,
+    #     source=intermediate_lang,
+    #     target=_lang_code_to_niutrans(target_lang),
+    #     base_url=translator_cfg["base_url"],
+    #     model=translator_cfg["model"],
+    #     temperature=translator_cfg["temperature"],
+    #     timeout=translator_cfg["timeout"],
+    #     top_p=translator_cfg["top_p"],
+    #     top_k=translator_cfg["top_k"],
+    #     max_tokens=translator_cfg["max_tokens"],
+    #     )
+    step4 = translate_with_ollama(
         step3,
         source=intermediate_lang,
         target=_lang_code_to_niutrans(target_lang),
@@ -104,7 +117,7 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
         top_p=translator_cfg["top_p"],
         top_k=translator_cfg["top_k"],
         max_tokens=translator_cfg["max_tokens"],
-        )
+    )
     steps.append({
         "step": 4, "engine": "LLM Translate:"+translator_cfg["model"],
         "direction": f"{intermediate_lang.upper()} → {target_lang.upper()} (二轮翻译)",

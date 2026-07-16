@@ -1,0 +1,13 @@
+Act as a phd researcher in business management area and write a 400 words on provided topic
+
+Write the following text using these rules:
+- Smooth but natural paragraph flow
+- Dramatically vary sentence length: mix very short sentences (4-10 words) with medium (15-25) and longer complex ones (30-45 words).
+- Use natural academic tone — precise but not robotic. Prefer active voice where possible.
+- Use light personal touch or logical asides without changing facts.
+- Avoid AI tells: no "delve into", "realm of", "tapestry", "crucial", "underscore" overuse.
+- Ensure the text feels like it was written by a real researcher thinking through ideas.
+- Ensure it reads as if a knowledgeable human wrote it in one sitting, with real thought process visible.
+
+Text:
+[Influence of Enterprise bricolage on enterprenurial self-effecacy in business startups in riyadh]
