@@ -19,22 +19,22 @@
 An AI text humanization toolkit. This repo evolved through two stages:
 
 - **v1.0** — Documented **4 humanization methodologies** as reference implementations (translation chain, multi-turn LLM rewriting, detection-guided feedback loop, mixed-engine translation). See [docs/techniques.md](docs/techniques.md).
-- **v1.5 (current)** — Added the **Standard Pipeline**: a production-grade integration of Method 1 (Translation Chain) + Method 2 (LLM Rewriting), fixed as a 5-step chain we actually run and recommend.
+- **v1.5 ** — Added the **Standard Pipeline**: a production-grade integration of Method 1 (Translation Chain) + Method 2 (LLM Rewriting), fixed as a 5-step chain we actually run and recommend.
+- **v2.0 ** — Update the **Standard Pipeline**: a production-grade integration of Method 1 (Translation Chain) + Method 2 (LLM Rewriting), fixed as a 5-step chain we actually run and recommend.
 
-### v1.5.2 — Standard Pipeline (Recommended offline setup)
+### v2.0 — Standard Pipeline (Recommended offline setup)
 
 The Standard Pipeline preserves the original writing style while routing text through a 4-step chain: two LLM humanization rewrites (Ollama local Qwen modles, OpenAI-compatible API) followed by two cross-engine translation hops.
 ```
-Input (EN) → Chinese (LLM) → Japanese (LLM) → Finnish (Libre Translate) → English (LLM Translate)
+Input (EN) → Chinese (LLM) → Japanese (LLM) → Finnish (LLM Translate) → English (LLM Translate)
 ```
 Following major changes with this version
 
-1. Fully offiline with no inline API usage
-2. Used Libre translate local
-3. Required Libre tranlsate and Ollama models running locally
-4. Recomended to use Qwen 7b and 14b models
+1. Fully offline with no inline API usage
+2. Used Ollama local LLM for Rewrite and translate
+3. Recomended to use Qwen 7b and 14b models
 
-![img.png](img.png)
+![img_4.png](img_4.png)
 
 **Characteristics:**
 - Best original style preservation among all approaches
@@ -50,12 +50,12 @@ Following major changes with this version
 
 ### Step-by-Step Pipeline
 
-| Step | Engine          | From → To | Purpose |
-|------|-----------------|-----------|---------|
-| 1 | LLM (temp 1.3)  | Input → Chinese (Chinese Rewriting) | LLM humanization rewrite + language shift |
-| 2 | LLM (temp 1.3)  | Chinese → Japanese (Japanese Rewriting) | Second LLM humanization, carries Step 1 as history |
-| 3 | Libre Translate | Japanese → Finnish (First Round of Translation) | First translation hop — distant language structural disruption |
-| 4 | LLM Translate   | Finnish → English (Second-Round Translation) | Second translation hop — cross-engine reconstruction |
+| Step | Engine         | From → To | Purpose |
+|------|----------------|-----------|---------|
+| 1 | LLM (temp 1.3) | Input → Chinese (Chinese Rewriting) | LLM humanization rewrite + language shift |
+| 2 | LLM (temp 1.3) | Chinese → Japanese (Japanese Rewriting) | Second LLM humanization, carries Step 1 as history |
+| 3 | LLM Translate  | Japanese → Finnish (First Round of Translation) | First translation hop — distant language structural disruption |
+| 4 | LLM Translate  | Finnish → English (Second-Round Translation) | Second translation hop — cross-engine reconstruction |
 
 ### Why This Chain Works
 
@@ -88,29 +88,34 @@ python run.py AI_text_file.txt
 Pre-requisits
 1. Install and configure ollama
 
-    configure the required model
+```aiignore
+# Windows command
+irm https://ollama.com/install.ps1 | iex
+# Mac
+curl -fsSL https://ollama.com/install.sh | sh
+```
     
-    ```aiignore
-    # create model file
+```
+# configure the required model
+# Create model file to change the ollama model configurations
     
     FROM qwen2.5:7b
     
-    PARAMETER num_ctx 16384
-    
-    ```
-    create and run customized model
-   ```bash
-       ollama create qwen2.5-16k:default -f .\ModelFileQ16
-   ```
-    Ensure model is working 
+    PARAMETER num_ctx 16384 
+```
+create and run customized model
+```bash
+    ollama create qwen2.5-16k:default -f .\ModelFileQ16
+```
+Ensure model is working 
 
-   ```bash
-   PS C:\ar_git\humanize-text> ollama ps
-   NAME                   ID              SIZE      PROCESSOR    CONTEXT    UNTIL
-   qwen2.5-16k:default    0a89db422b31    5.9 GB    100% CPU     16384      2 minutes from now
-   ```  
+```bash
+PS C:\ar_git\humanize-text> ollama ps
+NAME                   ID              SIZE      PROCESSOR    CONTEXT    UNTIL
+qwen2.5-16k:default    0a89db422b31    5.9 GB    100% CPU     16384      2 minutes from now
+```  
        
-2. Install and configure Libre Translate
+2. Install and configure Libre Translate (Optional if using Libre translate~~~~)
     ```
    # 1. Clone the repo
     git clone https://github.com/LibreTranslate/LibreTranslate.git

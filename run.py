@@ -47,8 +47,11 @@ print(f"\n💡 Original file word count: {word_count}")
 console = Console()
 
 # The spinner stays active as long as code is inside this block
-with console.status("\n[bold green]🤖 Running AI rewrite...", spinner="dots"):
-    result = run_standard_pipeline(input_data, config, target_lang="en")
+# with console.status("\n[bold green]🤖 Running AI rewrite...", spinner="dots"):
+console.print("\n🤖 [bold white]Started AI rewrite![/bold white]\n")
+
+result = run_standard_pipeline(input_data, config, target_lang="en")
+
 console.print("\n✅ [bold white]Finished AI rewrite![/bold white]")
 output= result["result"]
 word_count = len(output.split())

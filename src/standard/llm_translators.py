@@ -14,40 +14,40 @@ def translate_with_ollama(text: str, source: str, target: str, base_url: str, mo
     chunks = _split_text(text, max_len=10000)
     translated_chunks = []
 
-    console.print(f"🤖 [bold blue]Ollama translation started.[/bold blue] Slicing text into {len(chunks)} chunk(s)...")
+    # console.print(f"\n🤖 [bold blue]Ollama translation started.[/bold blue]")
 
     # 2. Open a dynamic progress status spinner
-    with console.status("[bold yellow]Model thinking...[/bold yellow]", spinner="dots") as status:
-        for idx, chunk in enumerate(chunks):
-            if not chunk.strip():
-                translated_chunks.append(chunk)
-                continue
+    # with console.status("[bold yellow]Model thinking...[/bold yellow]", spinner="dots") as status:
+    for idx, chunk in enumerate(chunks):
+        if not chunk.strip():
+            translated_chunks.append(chunk)
+            continue
 
-            status.update(f"[bold cyan]⚙️ Translating chunk {idx+1}/{len(chunks)}...[/bold cyan]")
+        # status.update(f"[bold cyan]⚙️ Translating chunk {idx+1}/{len(chunks)}...[/bold cyan]")
 
-            # System prompt ensures the model acts strictly as a translator
-            system_prompt = (
-                f"You are a professional translator. Translate the following text from {source} into fluent {target}. "
-                "Preserve all original paragraph structures, formatting, lines breaks, and markdown characters. "
-                "Do NOT add any commentary, notes, or explanations before or after the translation. "
-                "Return ONLY the direct translation."
+        # System prompt ensures the model acts strictly as a translator
+        system_prompt = (
+            f"You are a professional translator. Translate the following text from {source} into fluent {target}. "
+            "Preserve all original paragraph structures, formatting, lines breaks, and markdown characters. "
+            "Do NOT add any commentary, notes, or explanations before or after the translation. "
+            "Return ONLY the direct translation."
+        )
+
+        try:
+            response = client.generate(
+                model=model,
+                system=system_prompt,
+                prompt=chunk,
+                options={"temperature": temperature,"top_p":top_p,"top_k":top_k,"num_ctx": max_tokens} # Low temperature keeps it precise
             )
 
-            try:
-                response = client.generate(
-                    model=model,
-                    system=system_prompt,
-                    prompt=chunk,
-                    options={"temperature": temperature,"top_p":top_p,"top_k":top_k,"num_ctx": max_tokens} # Low temperature keeps it precise
-                )
+            translated_chunks.append(response['response'].strip())
+            # console.log(f"✔️ Chunk {idx+1}/{len(chunks)} processed successfully.")
 
-                translated_chunks.append(response['response'].strip())
-                console.log(f"✔️ Chunk {idx+1}/{len(chunks)} processed successfully.")
+        except Exception as e:
+            console.log(f"❌ Error on chunk {idx+1}: {e}")
+            # Append original chunk as fallback instead of crashing the whole pipeline
+            translated_chunks.append(chunk)
 
-            except Exception as e:
-                console.log(f"❌ Error on chunk {idx+1}: {e}")
-                # Append original chunk as fallback instead of crashing the whole pipeline
-                translated_chunks.append(chunk)
-
-    console.print("\n📋 [bold green]All subprocesses completed successfully![/bold green]")
+    # console.print("\n📋 [bold green]ollama translation completed successfully![/bold green]")
     return "\n\n".join(translated_chunks)

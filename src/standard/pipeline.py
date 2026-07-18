@@ -16,8 +16,9 @@ import time
 import click
 import toml
 
+from rich.console import Console
 from .llm_client import resolve_llm_config
-from .translators import google_translate, llm_translate,libre_translate
+# from .translators import google_translate, llm_translate,libre_translate
 from .llm_rewriter import llm_rewrite
 from .llm_translators import translate_with_ollama
 
@@ -36,101 +37,119 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
             - 'steps': list of {step, engine, direction, output, length}
             - 'processing_time_ms': total elapsed time in milliseconds
     """
-    llm = resolve_llm_config(config)
+    console = Console()
+    with console.status("\n[bold green]🤖 Running AI rewrite...", spinner="dots") as status:
+        llm = resolve_llm_config(config)
 
-    intermediate_lang = config.get("pipeline", {}).get("intermediate_lang", "fi")
-    engine_name = "LLM_Rewrite:"+llm["model"]
-    translator_cfg = config.get("translator", {})
+        intermediate_lang = config.get("pipeline", {}).get("intermediate_lang", "fi")
+        engine_name = "LLM_Rewrite:"+llm["model"]
+        translator_cfg = config.get("translator", {})
 
-    steps = []
-    start = time.time()
+        steps = []
+        start = time.time()
+        status.update(f"[bold cyan]⚙️ Step 1 started Input → Chinese {engine_name}..[/bold cyan]")
 
-    # Step 1: LLM — Input (EN) → Chinese humanization rewrite
-    step1 = llm_rewrite(
-        text=text,
-        target_language="中文",
-        api_key=llm["api_key"],
-        base_url=llm["base_url"],
-        model=llm["model"],
-        history=None,
-        temperature=llm["temperature"],
-        extra_headers=llm["extra_headers"],
-        provider=llm["provider"],
-        # top_p=llm["top_p"],
-        # timeout=llm["timeout"],
-    )
-    steps.append({
-        "step": 1, "engine": engine_name,
-        "direction": "Input → Chinese (中文改写)",
-        "output": step1, "length": len(step1),
-    })
+        # Step 1: LLM — Input (EN) → Chinese humanization rewrite
+        step1 = llm_rewrite(
+            text=text,
+            target_language="中文",
+            api_key=llm["api_key"],
+            base_url=llm["base_url"],
+            model=llm["model"],
+            history=None,
+            temperature=llm["temperature"],
+            extra_headers=llm["extra_headers"],
+            provider=llm["provider"],
+            # top_p=llm["top_p"],
+            # timeout=llm["timeout"],
+        )
+        steps.append({
+            "step": 1, "engine": engine_name,
+            "direction": "Input → Chinese (中文改写)",
+            "output": step1, "length": len(step1),
+        })
+        console.print("\n📋 [bold green]Step 1 completed successfully![/bold green]")
+        # Step 2: LLM — Chinese → Japanese (carries step 1 as history)
+        status.update(f"[bold cyan]⚙️ Step 2 started Chinese → Japanese {engine_name}..[/bold cyan]")
+        step2 = llm_rewrite(
+            text=step1,
+            target_language="日语",
+            api_key=llm["api_key"],
+            base_url=llm["base_url"],
+            model=llm["model"],
+            history={"input": text, "output": step1},
+            temperature=llm["temperature"],
+            extra_headers=llm["extra_headers"],
+            provider=llm["provider"],
+            # top_p=llm["top_p"],
+            # timeout=translator_cfg["timeout"],
+        )
+        steps.append({
+            "step": 2, "engine": engine_name,
+            "direction": "Chinese → Japanese (日语改写)",
+            "output": step2, "length": len(step2),
+        })
+        console.print("\n📋 [bold green]Step 2 completed successfully![/bold green]")
+        # Step 3: Libre Translate — Japanese → intermediate language (first translation hop)
+        #step3 = libre_translate(step2, source="ja", target=intermediate_lang, libre_url=translator_cfg["libre_url"])
+        status.update(f"[bold cyan]⚙️ Step 3 started LLM Translate: Japanese → {intermediate_lang.upper()}..[/bold cyan]")
+        step3 = translate_with_ollama(
+            step2,
+            source="ja",
+            target=_lang_code_to_niutrans(intermediate_lang),
+            base_url=translator_cfg["base_url"],
+            model=translator_cfg["model"],
+            temperature=translator_cfg["temperature"],
+            timeout=translator_cfg["timeout"],
+            top_p=translator_cfg["top_p"],
+            top_k=translator_cfg["top_k"],
+            max_tokens=translator_cfg["max_tokens"],
+        )
+        steps.append({
+            "step": 3, "engine": "LLM Translate",
+            "direction": f"Japanese → {intermediate_lang.upper()} (一轮翻译)",
+            "output": step3, "length": len(step3),
+        })
+        console.print("\n📋 [bold green]Step 3 completed successfully![/bold green]")
+        # Step 4: llm translate — intermediate language → target (second translation hop)
+        # step4 = llm_translate(
+        #     step3,
+        #     source=intermediate_lang,
+        #     target=_lang_code_to_niutrans(target_lang),
+        #     base_url=translator_cfg["base_url"],
+        #     model=translator_cfg["model"],
+        #     temperature=translator_cfg["temperature"],
+        #     timeout=translator_cfg["timeout"],
+        #     top_p=translator_cfg["top_p"],
+        #     top_k=translator_cfg["top_k"],
+        #     max_tokens=translator_cfg["max_tokens"],
+        #     )
+        status.update(f"[bold cyan]⚙️ Step 4 started LLM Translate: {intermediate_lang.upper()} → {target_lang.upper()}..[/bold cyan]")
+        step4 = translate_with_ollama(
+            step3,
+            source=intermediate_lang,
+            target=_lang_code_to_niutrans(target_lang),
+            base_url=translator_cfg["base_url"],
+            model=translator_cfg["model"],
+            temperature=translator_cfg["temperature"],
+            timeout=translator_cfg["timeout"],
+            top_p=translator_cfg["top_p"],
+            top_k=translator_cfg["top_k"],
+            max_tokens=translator_cfg["max_tokens"],
+        )
+        steps.append({
+            "step": 4, "engine": "LLM Translate:"+translator_cfg["model"],
+            "direction": f"{intermediate_lang.upper()} → {target_lang.upper()} (二轮翻译)",
+            "output": step4, "length": len(step4),
+        })
+        console.print("\n📋 [bold green]Step 4 completed successfully![/bold green]")
+        elapsed_ms = int((time.time() - start) * 1000)
 
-    # Step 2: LLM — Chinese → Japanese (carries step 1 as history)
-    step2 = llm_rewrite(
-        text=step1,
-        target_language="日语",
-        api_key=llm["api_key"],
-        base_url=llm["base_url"],
-        model=llm["model"],
-        history={"input": text, "output": step1},
-        temperature=llm["temperature"],
-        extra_headers=llm["extra_headers"],
-        provider=llm["provider"],
-        # top_p=llm["top_p"],
-        # timeout=translator_cfg["timeout"],
-    )
-    steps.append({
-        "step": 2, "engine": engine_name,
-        "direction": "Chinese → Japanese (日语改写)",
-        "output": step2, "length": len(step2),
-    })
-
-    # Step 3: Libre Translate — Japanese → intermediate language (first translation hop)
-    step3 = libre_translate(step2, source="ja", target=intermediate_lang, libre_url=translator_cfg["libre_url"])
-    steps.append({
-        "step": 3, "engine": "Libre Translate",
-        "direction": f"Japanese → {intermediate_lang.upper()} (一轮翻译)",
-        "output": step3, "length": len(step3),
-    })
-
-    # Step 4: llm translate — intermediate language → target (second translation hop)
-    # step4 = llm_translate(
-    #     step3,
-    #     source=intermediate_lang,
-    #     target=_lang_code_to_niutrans(target_lang),
-    #     base_url=translator_cfg["base_url"],
-    #     model=translator_cfg["model"],
-    #     temperature=translator_cfg["temperature"],
-    #     timeout=translator_cfg["timeout"],
-    #     top_p=translator_cfg["top_p"],
-    #     top_k=translator_cfg["top_k"],
-    #     max_tokens=translator_cfg["max_tokens"],
-    #     )
-    step4 = translate_with_ollama(
-        step3,
-        source=intermediate_lang,
-        target=_lang_code_to_niutrans(target_lang),
-        base_url=translator_cfg["base_url"],
-        model=translator_cfg["model"],
-        temperature=translator_cfg["temperature"],
-        timeout=translator_cfg["timeout"],
-        top_p=translator_cfg["top_p"],
-        top_k=translator_cfg["top_k"],
-        max_tokens=translator_cfg["max_tokens"],
-    )
-    steps.append({
-        "step": 4, "engine": "LLM Translate:"+translator_cfg["model"],
-        "direction": f"{intermediate_lang.upper()} → {target_lang.upper()} (二轮翻译)",
-        "output": step4, "length": len(step4),
-    })
-
-    elapsed_ms = int((time.time() - start) * 1000)
-
-    return {
-        "result": step4,
-        "steps": steps,
-        "processing_time_ms": elapsed_ms,
-    }
+        return {
+            "result": step4,
+            "steps": steps,
+            "processing_time_ms": elapsed_ms,
+        }
 
 
 def _lang_code_to_niutrans(code: str) -> str:
