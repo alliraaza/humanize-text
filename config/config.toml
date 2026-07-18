@@ -10,7 +10,7 @@ log_level = "info"
 # DeepSeek API key (required when llm.provider = "deepseek")
 deepseek_api_key = "ollama"
 # OpenRouter API key (required when llm.provider = "openrouter")
-openrouter_api_key = "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"
+openrouter_api_key = ""
 # Niutrans API key (required for Step 4: 二轮翻译)
 niutrans_api_key = ""
 ollama_api_key="ollama"
