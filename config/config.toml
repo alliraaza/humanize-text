@@ -13,10 +13,11 @@ deepseek_api_key = "ollama"
 openrouter_api_key = ""
 # Niutrans API key (required for Step 4: 二轮翻译)
 niutrans_api_key = ""
+ollama_api_key="ollama"
 
 [llm]
-# LLM provider: "deepseek" | "openrouter"
-provider = "deepseek"
+# LLM provider: "deepseek" | "openrouter" | "ollama"
+provider = "ollama"
 # Override API base URL (empty = provider default)
 base_url = "http://localhost:11434/v1"
 # Model slug (empty = provider default)

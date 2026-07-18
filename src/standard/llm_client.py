@@ -26,6 +26,12 @@ PROVIDER_DEFAULTS: dict[str, dict[str, str]] = {
         "api_key_field": "litellm_api_key",
         "display_name": "LiteLLM",
     },
+    "ollama": {
+        "base_url": "http://localhost:11434/v1",
+        "model": "",
+        "api_key_field": "ollama_api_key",
+        "display_name": "Ollama",
+    },
 }
 
 DEFAULT_PROVIDER = "deepseek"
@@ -80,7 +86,7 @@ def resolve_llm_config(config: dict) -> dict[str, Any]:
     elif provider == "deepseek" and (ds_key := os.environ.get("DEEPSEEK_API_KEY")):
         api_key = ds_key
 
-    if not api_key and provider != "litellm":
+    if not api_key and provider not in ("litellm", "ollama"):
         raise ValueError(
             f"Missing API key for provider {provider!r}. "
             f"Set api_keys.{api_key_field} in config or LLM_API_KEY env var."
@@ -129,7 +135,7 @@ def chat_completions(
             timeout=timeout,
         )
 
-    if not api_key:
+    if not api_key and provider not in ("litellm", "ollama"):
         raise ValueError("API key is required for LLM chat completions.")
 
     url = normalize_chat_completions_url(base_url)
