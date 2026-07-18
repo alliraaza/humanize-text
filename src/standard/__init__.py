@@ -16,7 +16,8 @@ Quick start:
 
 from .pipeline import run_standard_pipeline
 from .llm_rewriter import deepseek_rewrite
-from .translators import google_translate, llm_translate
+from .translators import google_translate
+from .llm_translators import LLMTranslator
 
 __all__ = [
     "run_standard_pipeline",

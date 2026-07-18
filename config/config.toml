@@ -10,18 +10,19 @@ log_level = "info"
 # DeepSeek API key (required when llm.provider = "deepseek")
 deepseek_api_key = "ollama"
 # OpenRouter API key (required when llm.provider = "openrouter")
-openrouter_api_key = ""
+openrouter_api_key = "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"
 # Niutrans API key (required for Step 4: 二轮翻译)
 niutrans_api_key = ""
 ollama_api_key="ollama"
 
 [llm]
 # LLM provider: "deepseek" | "openrouter" | "ollama"
-provider = "ollama"
-# Override API base URL (empty = provider default)
-base_url = "http://localhost:11434/v1"
+provider = "openrouter"
+# Override API base URL (empty = provider default | ollama defaults to local)
+base_url = ""
+model = "openrouter/free"
 # Model slug (empty = provider default)
-model = "qwen2.5:7b"
+#model = "qwen2.5:7b"
 #model = "qwen2.5-16k:default"
 #model = "qwen2.5-16k:latest"
 # Temperature for LLM rewriting (1.3 recommended)
@@ -34,8 +35,10 @@ top_p = 0.92
 #top_k = 40
 
 [translator]
-base_url = "http://localhost:11434"
-model = "qwen2.5:7b"
+# LLM provider: "deepseek" | "openrouter" | "ollama"
+provider = "openrouter"
+base_url = ""
+model = "openrouter/free"
 #model = "qwen2.5-16k:default"
 #model = "qwen2.5-16k:latest"
 # Temperature for translation should be lower
@@ -44,6 +47,9 @@ top_p = 0.90
 top_k = 40
 timeout=600
 max_tokens=6144
+http_referer = ""
+app_title = ""
+
 
 #step 3 treanslation from JA-FI using libre
 libre_url="http://localhost:5000/translate"

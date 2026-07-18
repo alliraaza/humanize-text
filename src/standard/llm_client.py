@@ -73,8 +73,8 @@ def resolve_llm_config(config: dict) -> dict[str, Any]:
 
     temperature = llm_cfg.get("temperature", pipeline_cfg.get("temperature", 1.3))
 
-    # top_p = llm_cfg.get("top_p",0.92)
-    # top_k = llm_cfg.get("top_k",40)
+    top_p = llm_cfg.get("top_p",0.92)
+    top_k = llm_cfg.get("top_k",40)
 
     api_key_field = defaults["api_key_field"]
     api_key = api_keys.get(api_key_field, "")
@@ -107,6 +107,77 @@ def resolve_llm_config(config: dict) -> dict[str, Any]:
         # "top_p":top_p,
         "api_key": api_key,
         "extra_headers": extra_headers or None,
+    }
+
+def resolve_translators_config(config: dict) -> dict[str, Any]:
+    """Merge TOML config and environment variables into resolved LLM settings."""
+    trans_cfg = config.get("translator", {})
+    pipeline_cfg = config.get("pipeline", {})
+    api_keys = config.get("api_keys", {})
+    llm_cfg = config.get("llm", {})
+
+    provider = trans_cfg.get("provider") or DEFAULT_PROVIDER
+    if env_provider := os.environ.get("LLM_PROVIDER"):
+        provider = env_provider
+
+    if provider not in PROVIDER_DEFAULTS:
+        raise ValueError(
+            f"Unsupported LLM provider: {provider!r}. "
+            f"Supported: {', '.join(PROVIDER_DEFAULTS)}"
+        )
+
+    defaults = PROVIDER_DEFAULTS[provider]
+
+    base_url = trans_cfg.get("base_url") or defaults["base_url"]
+    if env_base_url := os.environ.get("LLM_BASE_URL"):
+        base_url = env_base_url
+
+    model = trans_cfg.get("model") or llm_cfg.get("model") or defaults["model"]
+    if env_model := os.environ.get("LLM_MODEL"):
+        model = env_model
+
+    timeout = trans_cfg.get("timeout") or llm_cfg.get("timeout") or defaults["timeout"]
+    temperature = trans_cfg.get("temperature", pipeline_cfg.get("temperature", 0.5))
+    max_tokens = trans_cfg.get("max_tokens") or llm_cfg.get("max_tokens") or defaults["max_tokens"]
+
+
+    top_p = trans_cfg.get("top_p",0.92)
+    top_k = trans_cfg.get("top_k",40)
+
+    api_key_field = defaults["api_key_field"]
+    api_key = api_keys.get(api_key_field, "")
+
+    if env_api_key := os.environ.get("LLM_API_KEY"):
+        api_key = env_api_key
+    elif provider == "openrouter" and (or_key := os.environ.get("OPENROUTER_API_KEY")):
+        api_key = or_key
+    elif provider == "deepseek" and (ds_key := os.environ.get("DEEPSEEK_API_KEY")):
+        api_key = ds_key
+
+    if not api_key and provider not in ("litellm", "ollama"):
+        raise ValueError(
+            f"Missing API key for provider {provider!r}. "
+            f"Set api_keys.{api_key_field} in config or LLM_API_KEY env var."
+        )
+
+    extra_headers: dict[str, str] = {}
+    if http_referer := trans_cfg.get("http_referer"):
+        extra_headers["HTTP-Referer"] = http_referer
+    if app_title := trans_cfg.get("app_title"):
+        extra_headers["X-Title"] = app_title
+
+    return {
+        "provider": provider,
+        "display_name": defaults["display_name"],
+        "base_url": base_url,
+        "model": model,
+        "temperature": temperature,
+        "top_p":top_p,
+        "top_k":top_k,
+        "timeout":timeout,
+        "api_key": api_key,
+        "extra_headers": extra_headers or None,
+        "max_tokens": max_tokens,
     }
 
 
@@ -148,12 +219,17 @@ def chat_completions(
         "messages": messages,
         "temperature": temperature,
     }
+
     if top_p is not None:
         payload["top_p"] = top_p
     if top_k is not None:
         payload["top_k"] = top_k
 
+    # print (f"url: {url} : {payload}")
+
+
     response = httpx.post(url, headers=headers, json=payload, timeout=timeout)
+    # print(f"res: "+response.text)
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"].strip()
 

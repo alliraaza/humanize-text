@@ -17,10 +17,10 @@ import click
 import toml
 
 from rich.console import Console
-from .llm_client import resolve_llm_config
+from .llm_client import resolve_llm_config,resolve_translators_config
 # from .translators import google_translate, llm_translate,libre_translate
 from .llm_rewriter import llm_rewrite
-from .llm_translators import translate_with_ollama
+from .llm_translators import LLMTranslator
 
 
 def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> dict:
@@ -37,13 +37,14 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
             - 'steps': list of {step, engine, direction, output, length}
             - 'processing_time_ms': total elapsed time in milliseconds
     """
+    llmTranslator = LLMTranslator()
     console = Console()
     with console.status("\n[bold green]🤖 Running AI rewrite...", spinner="dots") as status:
         llm = resolve_llm_config(config)
 
         intermediate_lang = config.get("pipeline", {}).get("intermediate_lang", "fi")
         engine_name = "LLM_Rewrite:"+llm["model"]
-        translator_cfg = config.get("translator", {})
+        translator_cfg = resolve_translators_config(config)
 
         steps = []
         start = time.time()
@@ -93,8 +94,9 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
         # Step 3: Libre Translate — Japanese → intermediate language (first translation hop)
         #step3 = libre_translate(step2, source="ja", target=intermediate_lang, libre_url=translator_cfg["libre_url"])
         status.update(f"[bold cyan]⚙️ Step 3 started LLM Translate: Japanese → {intermediate_lang.upper()}..[/bold cyan]")
-        step3 = translate_with_ollama(
+        step3 = llmTranslator.translate(
             step2,
+            flag=translator_cfg["provider"],
             source="ja",
             target=_lang_code_to_niutrans(intermediate_lang),
             base_url=translator_cfg["base_url"],
@@ -104,9 +106,10 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
             top_p=translator_cfg["top_p"],
             top_k=translator_cfg["top_k"],
             max_tokens=translator_cfg["max_tokens"],
+            api_key=llm["api_key"],
         )
         steps.append({
-            "step": 3, "engine": "LLM Translate",
+            "step": 3, "engine": "LLM Translate: "+translator_cfg["model"],
             "direction": f"Japanese → {intermediate_lang.upper()} (一轮翻译)",
             "output": step3, "length": len(step3),
         })
@@ -125,8 +128,9 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
         #     max_tokens=translator_cfg["max_tokens"],
         #     )
         status.update(f"[bold cyan]⚙️ Step 4 started LLM Translate: {intermediate_lang.upper()} → {target_lang.upper()}..[/bold cyan]")
-        step4 = translate_with_ollama(
+        step4 = llmTranslator.translate(
             step3,
+            flag=translator_cfg["provider"],
             source=intermediate_lang,
             target=_lang_code_to_niutrans(target_lang),
             base_url=translator_cfg["base_url"],
@@ -136,6 +140,7 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
             top_p=translator_cfg["top_p"],
             top_k=translator_cfg["top_k"],
             max_tokens=translator_cfg["max_tokens"],
+            api_key=llm["api_key"],
         )
         steps.append({
             "step": 4, "engine": "LLM Translate:"+translator_cfg["model"],
