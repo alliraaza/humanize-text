@@ -10,7 +10,7 @@ log_level = "info"
 # DeepSeek API key (required when llm.provider = "deepseek")
 deepseek_api_key = "ollama"
 # OpenRouter API key (required when llm.provider = "openrouter")
-openrouter_api_key = ""
+openrouter_api_key = "sk-or-v1------"
 # Niutrans API key (required for Step 4: 二轮翻译)
 niutrans_api_key = ""
 ollama_api_key="ollama"
@@ -20,7 +20,9 @@ ollama_api_key="ollama"
 provider = "openrouter"
 # Override API base URL (empty = provider default | ollama defaults to local)
 base_url = ""
-model = "openrouter/free"
+#model = "openrouter/free"
+#model= "qwen2.5:7b"
+model = "nvidia/nemotron-3-super-120b-a12b:free"
 # Model slug (empty = provider default)
 #model = "qwen2.5:7b"
 #model = "qwen2.5-16k:default"
@@ -38,19 +40,19 @@ top_p = 0.92
 # LLM provider: "deepseek" | "openrouter" | "ollama"
 provider = "openrouter"
 base_url = ""
-model = "openrouter/free"
+#model = "openrouter/free"
+model = "nvidia/nemotron-3-super-120b-a12b:free"
 #model = "qwen2.5-16k:default"
 #model = "qwen2.5-16k:latest"
 # Temperature for translation should be lower
 temperature = 0.4       # Best balance for translation
 top_p = 0.90
-top_k = 40
 timeout=600
-max_tokens=6144
 http_referer = ""
 app_title = ""
-
-
+# top_k and Max tokens are used for ollama only, not using these limits OpenAI API
+top_k = 40
+max_tokens=6144
 #step 3 treanslation from JA-FI using libre
 libre_url="http://localhost:5000/translate"
 

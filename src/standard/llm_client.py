@@ -228,10 +228,54 @@ def chat_completions(
     # print (f"url: {url} : {payload}")
 
 
-    response = httpx.post(url, headers=headers, json=payload, timeout=timeout)
-    # print(f"res: "+response.text)
-    response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"].strip()
+    # response = httpx.post(url, headers=headers, json=payload, timeout=timeout)
+    # # print(f"res: "+response.text)
+    # response.raise_for_status()
+    # return response.json()["choices"][0]["message"]["content"].strip()
+
+    try:
+        # 1. Make the request
+        response = httpx.post(url, headers=headers, json=payload, timeout=timeout)
+
+        # 2. Check for HTTP errors (400, 429, 500, etc.)
+        response.raise_for_status()
+
+        # 3. Safely parse the JSON structure
+        data = response.json()
+        content = data["choices"][0]["message"]["content"]
+
+        if content is None:
+            print("Warning: Model returned an empty response body or a safety refusal.")
+            return ""
+
+        return content.strip()
+
+    except httpx.HTTPStatusError as e:
+        # This captures the EXACT reason OpenRouter failed (e.g., specific 400 or 429 message)
+        error_message = e.response.text
+        print(f"API Error ({e.response.status_code}): {error_message}")
+
+        # Decide how your app should fallback
+        if e.response.status_code == 429:
+            print("Rate limit reached. Consider adding a sleep delay or retrying.")
+        elif e.response.status_code == 400:
+            print("Bad Request. Check your model name string or payload formatting.")
+
+        return ""  # Or raise your own custom error
+
+    except httpx.TimeoutException:
+        print("Error: The request timed out.")
+        return ""
+
+    except httpx.RequestError as e:
+        print(f"Network Error: A connection issue occurred while requesting {e.request.url}.")
+        return ""
+
+    except (KeyError, IndexError) as e:
+        # Handles cases where the model succeeds but the JSON structure is unexpected
+        print(f"Data Structure Error: The API response format changed or is missing keys: {e}")
+        print(f"Raw response was: {response.text}")
+        return ""
 
 
 def _litellm_chat_completions(

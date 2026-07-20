@@ -69,7 +69,10 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
             "direction": "Input → Chinese (中文改写)",
             "output": step1, "length": len(step1),
         })
-        console.print("\n📋 [bold green]Step 1 completed successfully![/bold green]")
+        if len(step1) > 0:
+            console.print("\n📋 [bold green]Step 1 completed successfully![/bold green]")
+        else:
+            console.print("\n❌ [bold white]Step 1 failed![/bold white]")
         # Step 2: LLM — Chinese → Japanese (carries step 1 as history)
         status.update(f"[bold cyan]⚙️ Step 2 started Chinese → Japanese {engine_name}..[/bold cyan]")
         step2 = llm_rewrite(
@@ -90,7 +93,11 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
             "direction": "Chinese → Japanese (日语改写)",
             "output": step2, "length": len(step2),
         })
-        console.print("\n📋 [bold green]Step 2 completed successfully![/bold green]")
+        if len(step2) > 0:
+            console.print("\n📋 [bold green]Step 2 completed successfully![/bold green]")
+        else:
+            console.print("\n❌ [bold white]Step 2 failed![/bold white]")
+
         # Step 3: Libre Translate — Japanese → intermediate language (first translation hop)
         #step3 = libre_translate(step2, source="ja", target=intermediate_lang, libre_url=translator_cfg["libre_url"])
         status.update(f"[bold cyan]⚙️ Step 3 started LLM Translate: Japanese → {intermediate_lang.upper()}..[/bold cyan]")
@@ -113,8 +120,11 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
             "direction": f"Japanese → {intermediate_lang.upper()} (一轮翻译)",
             "output": step3, "length": len(step3),
         })
-        console.print("\n📋 [bold green]Step 3 completed successfully![/bold green]")
-        # Step 4: llm translate — intermediate language → target (second translation hop)
+        if len(step3) > 0:
+            console.print("\n📋 [bold green]Step 3 completed successfully![/bold green]")
+        else:
+            console.print("\n❌ [bold white]Step 3 failed![/bold white]")
+            # Step 4: llm translate — intermediate language → target (second translation hop)
         # step4 = llm_translate(
         #     step3,
         #     source=intermediate_lang,
@@ -147,7 +157,10 @@ def run_standard_pipeline(text: str, config: dict, target_lang: str = "en") -> d
             "direction": f"{intermediate_lang.upper()} → {target_lang.upper()} (二轮翻译)",
             "output": step4, "length": len(step4),
         })
-        console.print("\n📋 [bold green]Step 4 completed successfully![/bold green]")
+        if len(step4) > 0:
+            console.print("\n📋 [bold green]Step 4 completed successfully![/bold green]")
+        else:
+            console.print("\n❌ [bold white]Step 4 failed![/bold white]")
         elapsed_ms = int((time.time() - start) * 1000)
 
         return {

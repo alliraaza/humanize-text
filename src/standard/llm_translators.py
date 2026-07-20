@@ -1,6 +1,7 @@
 import time
 import ollama
 from rich.console import Console
+import openai
 from openai import OpenAI
 from ollama import Client
 from .utils import _split_text
@@ -25,6 +26,7 @@ class LLMTranslator:
         return method(text,source,target,base_url,model,temperature,timeout,top_p,top_k,max_tokens,api_key)
 
     def translate_with_ollama(self,text: str, source: str, target: str, base_url: str, model: str,temperature: str,timeout:str,top_p:str,top_k:str, max_tokens:str,api_key: str) -> str:
+        base_url = base_url.removesuffix("/v1")
         console = Console()
         """Translates large text using a local Ollama model with chunking and progress logging."""
         client = Client(host=base_url, timeout=timeout)
@@ -81,21 +83,75 @@ class LLMTranslator:
             timeout=timeout,
         )
 
+        # prompt = f"""
+        # Translate the following text from {source} to {target}.
+        # Return only the translated text.
+        #
+        # {text}
+        # """
+
         prompt = f"""
-        Translate the following text from {source} to {target}.
-        Return only the translated text.
+        Task: Act as a professional human translator. 
+        Instructions: Translate the following source text accurately into fluent, natural, and idiomatic from {source} to {target}. 
+        Maintain the original tone and context perfectly. Do not include any meta-commentary, explanations, or introductory text. Return ONLY the final translated text.
         
+        Source Text to Translate:
+        \"\"\"
         {text}
+        \"\"\"
         """
-        response = client.chat.completions.create(
-            model=model,
-            temperature=temperature,
-            top_p=top_p,
-            # max_tokens=max_tokens,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
+
+        max_retries = 3
+        backoff_delay = 2.0
+
+        for attempt in range(max_retries + 1):
+            try:
+                # Your original code block
+                response = client.chat.completions.create(
+                    model=model,
+                    temperature=temperature,
+                    top_p=top_p,
+                    # max_tokens=max_tokens,
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+
+                # Break out of retry loop on success
+                break
+
+            except openai.RateLimitError as e:
+                # Explicitly handles 429 errors
+                if attempt == max_retries:
+                    print(f"Rate limit exceeded. Max retries reached. Error: {e}")
+                    return ""
+
+                print(f"Rate limited (429). Retrying in {backoff_delay} seconds...")
+                time.sleep(backoff_delay)
+                backoff_delay *= 2  # Exponential backoff (2s, 4s, 8s...)
+
+            except openai.BadRequestError as e:
+                # Explicitly handles 400 errors (Wrong model names, bad formatting)
+                print(f"Bad Request Error (400): {e.message}")
+                print("Check your model string variable or message payload structure.")
+                return ""
+
+            except openai.APIConnectionError as e:
+                # Handles network drops / DNS issues
+                print(f"Network Connection Error: Failed to connect to server. {e}")
+                if attempt == max_retries:
+                    return ""
+                time.sleep(1)
+
+            except openai.APIStatusError as e:
+                # Catch-all for other non-200 HTTP statuses (401 Unauthorized, 500 Server Error)
+                print(f"API Status Error ({e.status_code}): {e.message}")
+                return ""
+
+            except Exception as e:
+                # Absolute fallback safety net
+                print(f"Unexpected non-API error occurred: {e}")
+                return ""
         # Extract the message object safely
         message = response.choices[0].message
 

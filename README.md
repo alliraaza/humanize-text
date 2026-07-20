@@ -1,18 +1,6 @@
 ## Free Humanize Text: Open-source toolkit to rewrite AI-generated content into natural
-<p align="center">
-  <img src="presentation/banner.png" alt="Humanize-Text" width="600"/>
-</p>
 
-<p align="center">
-  <a href="https://github.com/lynote-ai/humanize-text/stargazers"><img src="https://img.shields.io/github/stars/lynote-ai/humanize-text?style=social" alt="Stars"></a>
-  <a href="https://github.com/lynote-ai/humanize-text/network/members"><img src="https://img.shields.io/github/forks/lynote-ai/humanize-text?style=social" alt="Forks"></a>
-  <a href="https://github.com/lynote-ai/humanize-text/blob/main/LICENSE"><img src="https://img.shields.io/github/license/lynote-ai/humanize-text" alt="License"></a>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python"></a>
-  <a href="https://lynote.ai"><img src="https://img.shields.io/badge/Try-Lynote.ai-brightgreen?style=for-the-badge" alt="Lynote.ai"></a>
-</p>
-
-
----
+![img_5.png](img_5.png)
 
 ## What is Humanize-Text?
 
@@ -20,7 +8,7 @@ An AI text humanization toolkit. This repo evolved through two stages:
 
 - **v1.0** — Documented **4 humanization methodologies** as reference implementations (translation chain, multi-turn LLM rewriting, detection-guided feedback loop, mixed-engine translation). See [docs/techniques.md](docs/techniques.md).
 - **v1.5 ** — Added the **Standard Pipeline**: a production-grade integration of Method 1 (Translation Chain) + Method 2 (LLM Rewriting), fixed as a 5-step chain we actually run and recommend.
-- **v2.0 ** — Update the **Standard Pipeline**: a production-grade integration of Method 1 (Translation Chain) + Method 2 (LLM Rewriting), fixed as a 5-step chain we actually run and recommend.
+- **v2.0 ** — Update the **Standard Pipeline**: to use LLM for rewriting and translations
 
 ### v2.0 — Standard Pipeline (Recommended offline setup)
 
@@ -32,7 +20,7 @@ Following major changes with this version
 
 1. Fully offline with no inline API usage
 2. Used Ollama local LLM for Rewrite and translate
-3. Recomended to use Qwen 7b and 14b models
+3. Recommended to use Qwen 7b and 14b models
 
 ![img_4.png](img_4.png)
 
@@ -96,7 +84,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 ```
     
 ```
-# configure the required model
+# Optionsal: configure the required model
 # Create model file to change the ollama model configurations
     
     FROM qwen2.5:7b
@@ -232,7 +220,9 @@ src/
 │   ├── pipeline.py          # 4-step chain, CLI entry
 │   ├── llm_client.py        # OpenAI-compatible client (DeepSeek / OpenRouter)
 │   ├── llm_rewriter.py      # LLM humanization rewrite
+│   └── llm_translators.py   # LLM Translations with ollama or OpenAI
 │   └── translators.py       # Google + Niutrans engines
+│   └── utils.py             # Utility functions
 │
 └── methodologies/           # v1.0 four-methodology reference implementations
     ├── humanizer.py         # v1.0 dispatcher + FastAPI app
